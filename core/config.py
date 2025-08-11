@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     smtp_username: str
     smtp_password: str
     smtp_use_tls: bool = Field(default=True)
-    smtp_use_ssl: bool = Field(default=False)  # Add SSL option
+    # smtp_use_ssl: bool = Field(default=False)  # Add SSL option
 
     # Email settings
     from_email: str

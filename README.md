@@ -73,7 +73,7 @@ FROM_NAME=Your Service Name
 
 ```bash
 # Development mode
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+uvicorn app:app --reload --host 0.0.0.0 --port 8030
 
 # Or using Python
 python app.py

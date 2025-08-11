@@ -1,5 +1,7 @@
 import os
 import logging
+import ssl
+import certifi
 from typing import Dict, Any
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -123,10 +125,13 @@ class EmailService:
         
         # Send email
         try:
+
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
             # Prepare connection parameters
             connection_params = {
                 "hostname": settings.smtp_server,
                 "port": settings.smtp_port,
+                "tls_context": ssl_context,
             }
 
             # Add authentication if credentials are provided
@@ -140,6 +145,7 @@ class EmailService:
                 connection_params["use_tls"] = True
                 connection_params["start_tls"] = False
             elif settings.smtp_port == 587:
+                print("Using STARTTLS for port 587")
                 # Use STARTTLS for port 587
                 connection_params["start_tls"] = True
                 connection_params["use_tls"] = False
