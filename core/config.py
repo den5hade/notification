@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     template_dir: str = Field(default="templates")
 
     # Logging service settings
-    logging_service_url: str = Field(default="http://logger-service:8020")
+    # logging_service_url: str = Field(default="http://logger-service:8020")
+    logging_service_url: str = Field(default="http://127.0.0.1:8020")
     enable_request_logging: bool = Field(default=True)
     log_request_body: bool = Field(default=True)
     log_response_body: bool = Field(default=True)
