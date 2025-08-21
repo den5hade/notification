@@ -287,13 +287,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         if value is None:
             return None
 
-        value_str = str(value)
-        if len(value_str) <= 2:
-            return "***"
-        elif len(value_str) <= 6:
-            return value_str[0] + "*" * (len(value_str) - 2) + value_str[-1]
-        else:
-            return value_str[:2] + "*" * (len(value_str) - 4) + value_str[-2:]
+         # Replace sensitive values with a fixed token to avoid leaking length/format info
+        return "<redacted>"
 
     def _mask_sensitive_text(self, text: str) -> str:
         """Mask sensitive data in text format (form data, query strings, etc.)."""

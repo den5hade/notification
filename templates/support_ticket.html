@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Ticket Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .high-priority {
+            background-color: #ff4d4d;
+            color: white;
+        }
+        .medium-priority {
+            background-color: #ffa500;
+            color: white;
+        }
+        .low-priority {
+            background-color: #2196F3;
+            color: white;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #e8f4ff;
+            border: 1px solid #bfefff;
+            color: #00529b;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .ticket-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .ticket-category {
+            margin-top: 10px;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .login-category {
+            background-color: #ffd700;
+        }
+        .product-service-category {
+            background-color: #8fbc8f;
+        }
+        .search-category {
+            background-color: #dda0dd;
+        }
+        .store-service-category {
+            background-color: #ff6347;
+        }
+        .other-category {
+            background-color: #808080;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎫 Support Center</div>
+        </div>
+        
+        <h1 class="title">New Support Ticket Assigned</h1>
+        
+        <div class="content">
+            <p>Hello <strong>{{ user_name }}</strong>,</p>
+            
+            <p>You have been assigned a new support ticket. Below are the details:</p>
+            
+            <div class="ticket-details">
+                <p><strong>Requester:</strong> {{ user_email }}</p>
+                <p><strong>Ticket ID:</strong> {{ ticket_id }}</p>
+                <p><strong>Category:</strong> 
+                    <span class="ticket-category 
+                    {% if category == 'login' %}
+                        login-category
+                    {% elif category == 'product service' %}
+                        product-service-category
+                    {% elif category == 'search' %}
+                        search-category
+                    {% elif category == 'store service' %}
+                        store-service-category
+                    {% else %}
+                        other-category
+                    {% endif %}
+                    ">
+                        {{ category|title }}
+                    </span>
+                </p>
+                <p>
+                    <strong>Priority:</strong> 
+                    <span class="priority-badge
+                    {% if priority == 'High' %}
+                        high-priority
+                    {% elif priority == 'Medium' %}
+                        medium-priority
+                    {% else %}
+                        low-priority
+                    {% endif %}">
+                        {{ priority }}
+                    </span>
+                </p>
+                {% if due_date %}
+                <p><strong>Deadline:</strong> {{ due_date }}</p>
+                {% endif %}
+            </div>
+            
+            <h3>Issue Description</h3>
+            <p>{{ description }}</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ link }}" class="button">View Ticket</a>
+            </div>
+            
+            <div class="info-box">
+                <strong>🔍 Ticket Guidance:</strong> This is a {{ priority }} priority ticket. Review the issue and respond according to your team's escalation procedures. 
+                {% if priority == 'High' %}
+                This requires immediate attention as per SLA guidelines.
+                {% endif %}
+                Admin contact: admin@example.com
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>If you have any questions or need assistance, please contact our support team.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

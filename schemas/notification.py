@@ -7,6 +7,16 @@ class NotificationTask(str, Enum):
     """Enum for notification task types."""
     EMAIL_VERIFICATION = "email_verification"
     CHANGE_PASSWORD = "change_password"
+    SUPPORT_TICKET = "support_ticket"
+
+
+class SupportTicketCategory(str, Enum):
+    """Categories for support ticket classification"""
+    LOGIN = "login"
+    PRODUCT_SERVICE = "product service"
+    SEARCH = "search"
+    OTHER = "other"
+    STORE_SERVICE = "store service"
 
 
 class NotificationRequest(BaseModel):
@@ -29,11 +39,38 @@ class NotificationRequest(BaseModel):
         }
 
 
+class SupportTicketRequest(NotificationRequest):
+    """Schema for support ticket notification requests."""
+    user_email: EmailStr = Field(..., description="Submitter's email for responses")
+    category: SupportTicketCategory = Field(..., description="Support issue category")
+    ticket_id: str = Field(..., description="Unique support ticket identifier")
+    priority: str = Field(..., description="Urgency level [High/Medium/Low]")
+    description: str = Field(..., description="Detailed issue description")
+    due_date: Optional[str] = Field(None, description="Expected resolution date/time")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "support@example.com",
+                "task": "support_ticket",
+                "link": "https://portal.example.com/ticket/12345",
+                "user_name": "Support Team",
+                "subject": "New Support Ticket Created",
+                "user_email": "requester@example.com",
+                "category": "login",
+                "ticket_id": "TICKET-12345",
+                "priority": "High",
+                "description": "User unable to log in after password reset",
+                "due_date": "2023-06-20T18:00:00Z"
+            }
+        }
+
+
 class NotificationResponse(BaseModel):
     """Schema for notification response."""
     success: bool = Field(..., description="Whether the notification was sent successfully")
     message: str = Field(..., description="Response message")
-    email: Optional[str] = Field(None, description="Email address that was notified")
+    email: Optional[EmailStr] = Field(None, description="Email address that was notified")
     task: Optional[NotificationTask] = Field(None, description="Task that was processed")
 
     class Config:

@@ -8,10 +8,10 @@ from services.send_email_service import email_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+notification_router = APIRouter()
 
 
-@router.post(
+@notification_router.post(
     "/send",
     response_model=NotificationResponse,
     status_code=status.HTTP_200_OK,
@@ -67,7 +67,7 @@ async def send_notification(request: NotificationRequest) -> NotificationRespons
         )
 
 
-@router.get(
+@notification_router.get(
     "/health",
     status_code=status.HTTP_200_OK,
     summary="Health check",

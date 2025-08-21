@@ -11,7 +11,7 @@ import aiosmtplib
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from core.config import settings
-from schemas.notification import NotificationRequest, NotificationTask
+from schemas.notification import NotificationRequest, NotificationTask, SupportTicketRequest
 
 
 logger = logging.getLogger(__name__)
@@ -45,11 +45,30 @@ class EmailService:
             # Get the appropriate template based on task type
             template_name = self._get_template_name(request.task)
             
-            # Render the email content
-            html_content = await self._render_template(template_name, {
-                "user_name": request.user_name,
-                "link": request.link
-            })
+            # Render the email content with appropriate context
+            if request.task == NotificationTask.SUPPORT_TICKET:
+                # For support tickets, include all ticket-specific fields
+                context = {
+                    "user_name": request.user_name,
+                    "link": request.link,
+                    "user_email": request.user_email,
+                    "category": request.category,
+                    "ticket_id": request.ticket_id,
+                    "priority": request.priority,
+                    "description": request.description
+                }
+                
+                # Only include due_date if provided
+                if hasattr(request, 'due_date') and request.due_date:
+                    context["due_date"] = request.due_date
+                    
+                html_content = await self._render_template(template_name, context)
+            else:
+                # For other notification types, use basic context
+                html_content = await self._render_template(template_name, {
+                    "user_name": request.user_name,
+                    "link": request.link
+                })
             
             # Create and send the email
             await self._send_email(
@@ -79,7 +98,8 @@ class EmailService:
         """Get template filename based on notification task."""
         template_mapping = {
             NotificationTask.EMAIL_VERIFICATION: "email_verification.html",
-            NotificationTask.CHANGE_PASSWORD: "change_password.html"
+            NotificationTask.CHANGE_PASSWORD: "change_password.html",
+            NotificationTask.SUPPORT_TICKET: "support_ticket.html"
         }
         return template_mapping.get(task, "email_verification.html")
     
