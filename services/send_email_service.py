@@ -34,19 +34,19 @@ class EmailService:
     async def send_notification_email(self, request: NotificationRequest) -> Dict[str, Any]:
         """
         Send notification email based on the request.
-        
+
         Args:
             request: NotificationRequest containing email details
-            
+
         Returns:
             Dict containing success status and message
         """
         try:
             # Get the appropriate template based on task type
             template_name = self._get_template_name(request.task)
-            
+
             # Render the email content with appropriate context
-            if request.task == NotificationTask.SUPPORT_TICKET:
+            if request.task == NotificationTask.SUPPORT_TICKET and isinstance(request, SupportTicketRequest):
                 # For support tickets, include all ticket-specific fields
                 context = {
                     "user_name": request.user_name,
@@ -57,11 +57,11 @@ class EmailService:
                     "priority": request.priority,
                     "description": request.description
                 }
-                
+
                 # Only include due_date if provided
                 if hasattr(request, 'due_date') and request.due_date:
                     context["due_date"] = request.due_date
-                    
+
                 html_content = await self._render_template(template_name, context)
             else:
                 # For other notification types, use basic context
@@ -69,14 +69,14 @@ class EmailService:
                     "user_name": request.user_name,
                     "link": request.link
                 })
-            
+
             # Create and send the email
             await self._send_email(
                 to_email=request.email,
                 subject=request.subject,
                 html_content=html_content
             )
-            
+
             logger.info(f"Email sent successfully to {request.email} for task {request.task}")
             return {
                 "success": True,
@@ -84,7 +84,7 @@ class EmailService:
                 "email": request.email,
                 "task": request.task
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to send email to {request.email}: {str(e)}")
             return {
@@ -93,6 +93,105 @@ class EmailService:
                 "email": request.email,
                 "task": request.task
             }
+
+    async def send_support_ticket_emails(self, request: SupportTicketRequest) -> Dict[str, Any]:
+        """
+        Send both confirmation email to user and notification email to support team for support tickets.
+
+        Args:
+            request: SupportTicketRequest containing ticket details
+
+        Returns:
+            Dict containing success status and results for both emails
+        """
+        results = {
+            "success": True,
+            "message": "Support ticket emails processed",
+            "user_email_result": None,
+            "support_email_result": None
+        }
+
+        try:
+            # Send confirmation email to user
+            user_context = {
+                "user_name": request.user_name,
+                "link": request.link,
+                "user_email": request.user_email,
+                "category": request.category,
+                "ticket_id": request.ticket_id,
+                "priority": request.priority,
+                "description": request.description
+            }
+
+            if hasattr(request, 'due_date') and request.due_date:
+                user_context["due_date"] = request.due_date
+
+            user_html_content = await self._render_template("support_ticket_confirmation.html", user_context)
+
+            await self._send_email(
+                to_email=request.user_email,
+                subject=f"Support Ticket Confirmation - {request.ticket_id}",
+                html_content=user_html_content
+            )
+
+            results["user_email_result"] = {
+                "success": True,
+                "message": "Confirmation email sent to user",
+                "email": request.user_email
+            }
+
+            logger.info(f"Confirmation email sent to user {request.user_email} for ticket {request.ticket_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to send confirmation email to user {request.user_email}: {str(e)}")
+            results["user_email_result"] = {
+                "success": False,
+                "message": f"Failed to send confirmation email: {str(e)}",
+                "email": request.user_email
+            }
+            results["success"] = False
+
+        try:
+            # Send notification email to support team
+            support_context = {
+                "user_name": "Support Team",  # Different recipient name for support team
+                "link": request.link,
+                "user_email": request.user_email,
+                "category": request.category,
+                "ticket_id": request.ticket_id,
+                "priority": request.priority,
+                "description": request.description
+            }
+
+            if hasattr(request, 'due_date') and request.due_date:
+                support_context["due_date"] = request.due_date
+
+            support_html_content = await self._render_template("support_ticket.html", support_context)
+
+            await self._send_email(
+                to_email=settings.support_team_email,
+                subject=request.subject,
+                html_content=support_html_content
+            )
+
+            results["support_email_result"] = {
+                "success": True,
+                "message": "Notification email sent to support team",
+                "email": settings.support_team_email
+            }
+
+            logger.info(f"Notification email sent to support team {settings.support_team_email} for ticket {request.ticket_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to send notification email to support team {settings.support_team_email}: {str(e)}")
+            results["support_email_result"] = {
+                "success": False,
+                "message": f"Failed to send notification email: {str(e)}",
+                "email": settings.support_team_email
+            }
+            results["success"] = False
+
+        return results
     
     def _get_template_name(self, task: NotificationTask) -> str:
         """Get template filename based on notification task."""

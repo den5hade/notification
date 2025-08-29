@@ -18,14 +18,15 @@ class Settings(BaseSettings):
     # Gmail SMTP settings
     smtp_server: str = Field(default="smtp.gmail.com")
     smtp_port: int = Field(default=587)
-    smtp_username: str
-    smtp_password: str
+    smtp_username: str = Field(...)
+    smtp_password: str = Field(...)
     smtp_use_tls: bool = Field(default=True)
     # smtp_use_ssl: bool = Field(default=False)  # Add SSL option
 
     # Email settings
-    from_email: str
+    from_email: str = Field(...)
     from_name: str = Field(default="Notification Service")
+    support_team_email: str = Field(default="support@example.com")
 
     # Template settings
     template_dir: str = Field(default="templates")

@@ -1,12 +1,13 @@
 # Notification Microservice
 
-A FastAPI-based microservice for sending email notifications using Gmail SMTP. This service handles email verification and password change notifications for other microservices.
+A FastAPI-based microservice for sending email notifications using Gmail SMTP. This service handles email verification, password change, and support ticket notifications for other microservices.
 
 ## Features
 
 - 📧 Email notifications via Gmail SMTP
 - 🎨 HTML email templates with responsive design
 - 🔒 Support for email verification and password change notifications
+- 🎫 **Support Ticket System**: Dual email notifications (user confirmation + support team notification)
 - 📝 Pydantic schemas for request/response validation
 - 🚀 FastAPI with automatic API documentation
 - 🔧 Environment-based configuration
@@ -21,19 +22,23 @@ notification/
 ├── api/
 │   └── api_v1/
 │       ├── handlers/
-│       │   └── notification.py    # API endpoints
-│       └── routers.py             # Route configuration
+│       │   ├── notification.py        # General notification endpoints
+│       │   └── support_ticket.py      # Support ticket endpoints
+│       └── routers.py                 # Route configuration
 ├── core/
-│   └── config.py                  # Application settings
+│   └── config.py                      # Application settings
 ├── schemas/
-│   └── notification.py            # Pydantic models
+│   ├── notification.py                # General notification models
+│   └── support.py                     # Support ticket models
 ├── services/
-│   └── send_email_service.py      # Email service logic
+│   └── send_email_service.py          # Email service logic
 ├── templates/
-│   ├── email_verification.html    # Email verification template
-│   └── change_password.html       # Password change template
-├── app.py                         # FastAPI application
-└── pyproject.toml                 # Dependencies
+│   ├── email_verification.html        # Email verification template
+│   ├── change_password.html           # Password change template
+│   ├── support_ticket.html            # Support team notification template
+│   └── support_ticket_confirmation.html # User confirmation template
+├── app.py                             # FastAPI application
+└── pyproject.toml                     # Dependencies
 ```
 
 ## Setup
@@ -60,6 +65,9 @@ SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password  # Use App Password, not regular password
 FROM_EMAIL=your-email@gmail.com
 FROM_NAME=Your Service Name
+
+# Support Team Configuration
+SUPPORT_TEAM_EMAIL=support@yourcompany.com
 ```
 
 ### 3. Gmail App Password Setup
@@ -148,6 +156,83 @@ For detailed logging integration documentation, see [LOGGING_INTEGRATION.md](LOG
 }
 ```
 
+### Send Support Ticket Notification
+
+**POST** `/api/v1/support-ticket`
+
+Sends dual email notifications: one confirmation to the user and one notification to the support team.
+
+#### Support Ticket Request:
+```json
+{
+  "email": "support@yourcompany.com",
+  "task": "support_ticket",
+  "link": "https://portal.yourcompany.com/ticket/12345",
+  "user_name": "Support Team",
+  "subject": "New Support Ticket Created - TICKET-12345",
+  "user_email": "requester@example.com",
+  "category": "login",
+  "ticket_id": "TICKET-12345",
+  "priority": "High",
+  "description": "User unable to log in after password reset. Error: Invalid credentials",
+  "due_date": "2024-01-15T18:00:00Z"
+}
+```
+
+#### Support Ticket Request (Minimal):
+```json
+{
+  "email": "support@yourcompany.com",
+  "task": "support_ticket",
+  "link": "https://portal.yourcompany.com/ticket/12345",
+  "user_name": "Support Team",
+  "subject": "New Support Ticket Created",
+  "user_email": "requester@example.com",
+  "category": "product_service",
+  "ticket_id": "TICKET-12345",
+  "priority": "Medium",
+  "description": "Product search is not returning expected results"
+}
+```
+
+#### Support Ticket Response:
+```json
+{
+  "success": true,
+  "message": "Support ticket processed successfully - confirmation sent to user and notification sent to support team",
+  "ticket_id": "TICKET-12345",
+  "user_email_result": {
+    "success": true,
+    "message": "Confirmation email sent to user",
+    "email": "requester@example.com"
+  },
+  "support_email_result": {
+    "success": true,
+    "message": "Notification email sent to support team",
+    "email": "support@yourcompany.com"
+  }
+}
+```
+
+#### Support Ticket Response (Partial Failure):
+```json
+{
+  "success": false,
+  "message": "Failed to send: user confirmation email",
+  "ticket_id": "TICKET-12345",
+  "user_email_result": {
+    "success": false,
+    "message": "Failed to send confirmation email: SMTP connection error",
+    "email": "requester@example.com"
+  },
+  "support_email_result": {
+    "success": true,
+    "message": "Notification email sent to support team",
+    "email": "support@yourcompany.com"
+  }
+}
+```
+
 ### Health Check
 
 **GET** `/health` or `/api/v1/notifications/health`
@@ -179,6 +264,32 @@ The service includes responsive HTML templates for:
    - Warning for unauthorized requests
    - Time-sensitive action notice
 
+3. **Support Ticket Notification** (`templates/support_ticket.html`)
+   - Professional support team notification
+   - Complete ticket details with priority indicators
+   - Requester information and issue description
+   - Action-oriented design for support staff
+
+4. **Support Ticket Confirmation** (`templates/support_ticket_confirmation.html`)
+   - User-friendly confirmation message
+   - Ticket details and next steps
+   - Clear expectations and timeline
+   - Professional confirmation design
+
+## Support Ticket Categories and Priorities
+
+### Categories
+- `login` - Login and authentication issues
+- `product_service` - Product or service-related problems
+- `search` - Search functionality issues
+- `store_service` - Store or e-commerce related issues
+- `other` - Other miscellaneous issues
+
+### Priorities
+- `High` - Critical issues requiring immediate attention
+- `Medium` - Important issues with standard response time
+- `Low` - Minor issues or feature requests
+
 ## Development
 
 ### Adding New Notification Types
@@ -186,6 +297,15 @@ The service includes responsive HTML templates for:
 1. Add new task type to `NotificationTask` enum in `schemas/notification.py`
 2. Create new HTML template in `templates/`
 3. Update template mapping in `services/send_email_service.py`
+
+### Support Ticket Workflow
+
+The support ticket system automatically sends two emails:
+
+1. **User Confirmation Email**: Sent to the `user_email` address with ticket details and next steps
+2. **Support Team Notification**: Sent to the configured `SUPPORT_TEAM_EMAIL` with complete ticket information
+
+Both emails use separate templates and provide different information appropriate for each recipient.
 
 ### Testing
 

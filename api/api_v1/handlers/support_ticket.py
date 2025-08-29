@@ -24,18 +24,33 @@ async def send_support_ticket_notification(request: SupportTicketRequest) -> Dic
                 detail="Missing required fields: ticket_id and user_email are required"
             )
         
-        # Send the support ticket notification email
-        result = await email_service.send_notification_email(request)
+        # Send both confirmation email to user and notification email to support team
+        result = await email_service.send_support_ticket_emails(request)
         
         # Return appropriate response based on result
         if result["success"]:
-            logger.info(f"Support ticket notification sent successfully for ticket {request.ticket_id}")
-            return result
+            logger.info(f"Support ticket emails sent successfully for ticket {request.ticket_id}")
+            return {
+                "success": True,
+                "message": "Support ticket processed successfully - confirmation sent to user and notification sent to support team",
+                "ticket_id": request.ticket_id,
+                "user_email_result": result.get("user_email_result"),
+                "support_email_result": result.get("support_email_result")
+            }
         else:
-            logger.error(f"Failed to send support ticket notification: {result['message']}")
+            # Check which emails failed and provide appropriate error message
+            failed_parts = []
+            if result.get("user_email_result") and not result["user_email_result"]["success"]:
+                failed_parts.append("user confirmation email")
+            if result.get("support_email_result") and not result["support_email_result"]["success"]:
+                failed_parts.append("support team notification")
+
+            error_message = f"Failed to send: {', '.join(failed_parts)}"
+            logger.error(f"Support ticket email failure for ticket {request.ticket_id}: {error_message}")
+
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result["message"]
+                detail=error_message
             )
             
     except HTTPException:
